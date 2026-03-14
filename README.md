@@ -33,6 +33,3 @@ messenger_project/
 ├── utils/             # Helper utilities
 │   ├── __init__.py
 │   └── logger.py      # Message history and log formatting
-
-
-

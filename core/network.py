@@ -5,7 +5,7 @@ from .server import start_server_socket
 from .client import start_client_socket
 
 class NetworkNode:
-    def __init__(self, host='127.0.0.1', port=65432):
+    def __init__(self, host='0.0.0.0', port=65432):
         self.host = host
         self.port = port
         self.conn = None

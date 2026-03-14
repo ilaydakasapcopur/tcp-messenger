@@ -5,7 +5,6 @@ from ui.menu import AppInterface
 console = Console()
 
 def main():
-    # ASCII Art Tarzı Başlık
     banner = """
     [bold cyan]
      _____ ____ ____     __  __ _____ ____ ____  
