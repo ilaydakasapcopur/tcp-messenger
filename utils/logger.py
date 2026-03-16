@@ -9,12 +9,13 @@ class MessageLogger:
     def __init__(self):
         self.logs = []
 
-    def add_log(self, msg_type, params):
+    def add_log(self, msg_type, params, direction="sent"):
         log_entry = {
             "id": len(self.logs) + 1,
             "timestamp": datetime.datetime.now().strftime("%H:%M:%S"),
             "type": msg_type,
-            "params": params
+            "params": params,
+            "direction": direction
         }
         self.logs.append(log_entry)
         return log_entry
@@ -23,15 +24,18 @@ class MessageLogger:
         if not self.logs:
             console.print("[bold red][!] No messages logged yet.[/bold red]")
             return
-        
+
         table = Table(title="--- MESSAGE HISTORY ---", header_style="bold magenta")
         table.add_column("ID", justify="center", style="cyan")
         table.add_column("Timestamp", style="green")
         table.add_column("Type", style="yellow")
+        table.add_column("Direction", style="bright_cyan")
 
         for log in self.logs:
-            table.add_row(str(log['id']), log['timestamp'], log['type'])
-        
+            direction_style = "[green]" if log['direction'] == "sent" else "[blue]"
+            direction_text = f"{direction_style}{log['direction'].upper()}[/green]" if log['direction'] == "sent" else f"{direction_style}{log['direction'].upper()}[/blue]"
+            table.add_row(str(log['id']), log['timestamp'], log['type'], direction_text)
+
         console.print(table)
 
     def display_details(self, log_id):

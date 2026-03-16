@@ -3,6 +3,10 @@ from rich.panel import Panel
 from rich.prompt import Prompt
 from core.network import NetworkNode
 from utils.logger import MessageLogger
+from utils.validators import (
+    validate_string, validate_integer, validate_year,
+    prompt_with_validation, prompt_with_selection, DEGREE_OPTIONS
+)
 import sys
 
 # Critical: Initialize console for Rich output
@@ -53,30 +57,78 @@ class AppInterface:
                 console.print("[bold yellow]Exiting application...[/bold yellow]")
                 break
 
+    def _ask_loop_turns(self):
+        """Ask user how many loop turns should happen between sides."""
+        console.print("\n[bold cyan]>>> Conversation Loop Settings[/bold cyan]")
+        console.print("[dim]Each turn = one full back-and-forth exchange (send + receive).[/dim]")
+        while True:
+            turns_str = Prompt.ask("How many loop turns should happen? (0 for no auto-response)")
+            try:
+                turns = int(turns_str)
+                if turns < 0:
+                    console.print("[bold red]Please enter a non-negative number.[/bold red]")
+                    continue
+                return turns
+            except ValueError:
+                console.print("[bold red]Please enter a valid integer.[/bold red]")
+
+    def _warn_missing_opposite_params(self, current_type, loop_turns):
+        if loop_turns <= 0:
+            return
+
+        opposite_type = "MESSAGE_TYPE_2" if current_type == "MESSAGE_TYPE_1" else "MESSAGE_TYPE_1"
+        if opposite_type not in self.node.saved_params:
+            console.print(
+                f"[bold yellow][Warning][/bold yellow] No saved params for {opposite_type}. "
+                "Auto-responses will be skipped until that message type is sent manually."
+            )
+
     def send_type_1(self):
         console.print("\n[bold yellow]>>> Message 1 Parameters (Personal)[/bold yellow]")
         p = {
-            "name": Prompt.ask("Name"),
-            "surname": Prompt.ask("Surname"),
-            "age": Prompt.ask("Age"),
-            "residence": Prompt.ask("Residence")
+            "name": prompt_with_validation("Name", validate_string, "Name"),
+            "surname": prompt_with_validation("Surname", validate_string, "Surname"),
+            "age": prompt_with_validation("Age", validate_integer, "Age"),
+            "residence": prompt_with_validation("Residence", validate_string, "Residence")
         }
-        self.node.send_data("MESSAGE_TYPE_1", p)
-        console.print("[bold green]✔ Message 1 sent![/bold green]")
+        loop_turns = self._ask_loop_turns()
+        self._warn_missing_opposite_params("MESSAGE_TYPE_1", loop_turns)
+        self.node.send_data("MESSAGE_TYPE_1", p, remaining_turns=loop_turns, turn_phase="request")
+        console.print(f"[bold green]✔ Message 1 sent with {loop_turns} loop turn(s)![/bold green]")
 
     def send_type_2(self):
         console.print("\n[bold yellow]>>> Message 2 Parameters (Education)[/bold yellow]")
         p = {
-            "degree": Prompt.ask("Education Degree"),
-            "institution": Prompt.ask("Institution Name"),
-            "graduation_year": Prompt.ask("Graduation Year")
+            "degree": prompt_with_selection("Education Degree", DEGREE_OPTIONS),
+            "institution": prompt_with_validation("Institution Name", validate_string, "Institution"),
+            "graduation_year": prompt_with_validation("Graduation Year", validate_year, "Graduation Year")
         }
-        self.node.send_data("MESSAGE_TYPE_2", p)
-        console.print("[bold green]✔ Message 2 sent![/bold green]")
+        loop_turns = self._ask_loop_turns()
+        self._warn_missing_opposite_params("MESSAGE_TYPE_2", loop_turns)
+        self.node.send_data("MESSAGE_TYPE_2", p, remaining_turns=loop_turns, turn_phase="request")
+        console.print(f"[bold green]✔ Message 2 sent with {loop_turns} loop turn(s)![/bold green]")
 
     def view_logs(self):
-        self.node.logger.display_all()
-        if self.node.logger.logs:
+        while True:
+            self.node.logger.display_all()
+            if not self.node.logger.logs:
+                Prompt.ask("\nPress Enter to return to main menu")
+                break
+
             log_id = Prompt.ask("\nEnter ID for details (Press 0 to go back)")
-            if log_id != "0":
-                self.node.logger.display_details(log_id)
+            if log_id == "0":
+                break
+
+            self.node.logger.display_details(log_id)
+
+            # Show navigation options after viewing details
+            nav_text = (
+                "[bold cyan]1.[/bold cyan] Back to message table\n"
+                "[bold cyan]2.[/bold cyan] Back to main page"
+            )
+            console.print("\n", Panel(nav_text, title="[bold white]Navigation[/bold white]", border_style="bright_blue"))
+            nav_choice = Prompt.ask("Selection", choices=["1", "2"])
+
+            if nav_choice == "2":
+                break
+            # If choice is 1, loop continues and shows the table again
