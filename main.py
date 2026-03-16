@@ -16,10 +16,10 @@ def main():
     """
     console.print(Panel(banner, subtitle="TCP Messaging CLI v1.0", border_style="blue"))
     
-    console.print("[bold white]1.[/bold white] [green]Server Modu[/green]")
-    console.print("[bold white]2.[/bold white] [blue]Client Modu[/blue]")
+    console.print("[bold white]1.[/bold white] [green]Server Mode[/green]")
+    console.print("[bold white]2.[/bold white] [blue]Client Mode[/blue]")
     
-    choice = console.input("\n[bold yellow]Mod Seçiniz:[/bold yellow] ")
+    choice = console.input("\n[bold yellow]Select Mode:[/bold yellow] ")
     mode = "server" if choice == "1" else "client"
     
     app = AppInterface(mode)
